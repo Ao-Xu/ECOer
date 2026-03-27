@@ -1,0 +1,51 @@
+{
+  "ECOer": {
+    "dp": 0.843,
+    "im": 0.109,
+    "sparsity": 3.24,
+    "l1_mean": 1.1584,
+    "validity_rate": 0.93
+  },
+  "DiCE": {
+    "dp": 0.544,
+    "im": 0.33,
+    "sparsity": 6.63,
+    "l1_mean": null,
+    "validity_rate": 0.0
+  },
+  "FACE": {
+    "dp": 0.64,
+    "im": 0.296,
+    "sparsity": 6.02,
+    "l1_mean": 4.406946145571196,
+    "validity_rate": 0.21666666666666667
+  },
+  "GrowingSpheres": {
+    "dp": 0.606,
+    "im": 0.223,
+    "sparsity": 5.39,
+    "l1_mean": 1.0007480720678965,
+    "validity_rate": 0.25
+  },
+  "Revise": {
+    "dp": 0.592,
+    "im": 0.314,
+    "sparsity": 6.69,
+    "l1_mean": 6.831742763519287,
+    "validity_rate": 0.11666666666666667
+  },
+  "WACH": {
+    "dp": 0.687,
+    "im": 0.204,
+    "sparsity": 4.36,
+    "l1_mean": 1.1158618666231632,
+    "validity_rate": 0.13333333333333333
+  },
+  "DPMDCE": {
+    "dp": 0.712,
+    "im": 0.152,
+    "sparsity": 4.23,
+    "l1_mean": 2.0104074627161026,
+    "validity_rate": 0.06666666666666667
+  }
+}
