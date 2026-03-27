@@ -3,7 +3,6 @@
 Official experiment code for the paper:
 
 > **ECOer: Energy-Regularized Counterfactual Explanations for Nonparametric Classifiers**
-> *Submitted to Knowledge-Based Systems*
 
 ---
 
