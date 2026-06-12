@@ -5,7 +5,6 @@ Baseline counterfactual methods:
   3. GrowingSpheres— hypersphere expansion
   4. Revise        — VAE latent-space gradient search
   5. WACH          — Wachter's method via R2SNN (direct x-space gradient descent)
-  6. DPMDCE        — feature-space opt. without energy regularisation (ablation)
 
 All return list[dict] matching ECOer result format:
   {'x_cf': np.ndarray(d,), 'x_in': np.ndarray(d,), 'valid': bool,
@@ -377,94 +376,4 @@ def run_wach(
 
         x_cf = np.clip(x_var.detach().cpu().numpy().flatten(), -1, 1).astype(np.float32)
         results.append(_make_result(x_cf, x_in, clf, time.perf_counter() - t0, step))
-    return results
-
-
-# ──────────────────────────────────────────────────────────────────────────────
-# 6. DPMDCE
-# ──────────────────────────────────────────────────────────────────────────────
-
-def run_dpmdce(
-    X_test, clf, model, Gamma: np.ndarray,
-    n_instances=10, # Note: replace 10 with config.N_TEST_INSTANCES if imported
-    lr=0.01,
-    max_steps=1000, # Note: replace 1000 with config.CF_MAX_STEPS if imported
-    seed=42,        # Note: replace 42 with config.SEED if imported
-    device=None,
-    c_dist=0.1,     # Lambda weight for the overall DPMD distance penalty
-    beta_dpmd=1.0   # Beta weight for feature importance influence in Sigma'
-) -> list:
-    """
-    Feature-space optimisation using DPMDCE (Distribution Preference Mahalanobis Distance):
-      min_e  ||σ(W₂e) - y1||² + c_dist * (e - e_init)^T Σ' (e - e_init)
-    where Σ' = I + beta_dpmd * diag(feature_importance)
-    """
-    if device is None:
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-    results = []
-    
-    # Assuming _sample_test and _make_result are available in your broader scope
-    X_sel, _ = _sample_test(X_test, n_instances, seed) 
-    model.eval()
-    
-    W2 = model.get_W2().cpu().numpy().astype(np.float64)
-    W1 = model.get_W1().cpu().numpy().astype(np.float64)
-    b  = model.get_b().cpu().numpy().astype(np.float64)
-    Gamma_f = Gamma.astype(np.float64)
-
-    for x_in in X_sel:
-        t0 = time.perf_counter()
-        
-        y_in = int(clf.predict(x_in.reshape(1, -1))[0])
-        y_target_val = 1 if y_in == 0 else 0
-        y1 = np.array([0.0, 1.0] if y_in == 0 else [1.0, 0.0])
-
-        # Initial feature representation e_0
-        e_init = np.maximum(W1 @ x_in.astype(np.float64) + b, 0)
-        e = e_init.copy()
-
-        # DPMD: Estimate Feature Importance (Lambda).
-        # We use the absolute difference in the classification weights as a proxy 
-        # for distribution Wasserstein distance importance between the two classes.
-        weight_diff = np.abs(W2[y_target_val, :] - W2[y_in, :])
-        lambda_feat = weight_diff / (np.max(weight_diff) + 1e-8) # Normalize to 0-1
-
-        # DPMD: Construct diagonal of Sigma' = I + beta * diag(lambda)
-        # We assume the base covariance Sigma is the Identity matrix for simplification.
-        sigma_prime_diag = 1.0 + beta_dpmd * lambda_feat
-
-        m_a = np.zeros_like(e); v_a = np.zeros_like(e)
-        beta1, beta2, eps = 0.9, 0.999, 1e-8
-
-        for step in range(1, max_steps + 1):
-            z  = W2 @ e
-            sz = np.maximum(z, 0)   # σ(W₂e)
-            diff = sz - y1
-            
-            # 1. Gradient of predictive loss
-            sigma_p = (z > 0).astype(float)
-            grad_pred = W2.T @ (2 * diff * sigma_p)  # (m,)
-            
-            # 2. Gradient of DPMD distance loss: d/de [ c_dist * (e-e_init)^T * Sigma' * (e-e_init) ]
-            grad_dist = 2 * c_dist * sigma_prime_diag * (e - e_init)
-            
-            # Total gradient
-            grad = grad_pred + grad_dist
-            
-            # Adam step
-            m_a = beta1 * m_a + (1 - beta1) * grad
-            v_a = beta2 * v_a + (1 - beta2) * grad ** 2
-            m_h = m_a / (1 - beta1 ** step)
-            v_h = v_a / (1 - beta2 ** step)
-            e = np.maximum(e - lr * m_h / (np.sqrt(v_h) + eps), 0)
-
-            # Check if prediction flipped
-            x_cf_np = np.clip(Gamma_f @ e, -1, 1).astype(np.float32)
-            y_cf = clf.predict(x_cf_np.reshape(1, -1))[0]
-            if y_cf != y_in:
-                break
-
-        x_cf = np.clip(Gamma_f @ e, -1, 1).astype(np.float32)
-        results.append(_make_result(x_cf, x_in, clf, time.perf_counter() - t0, step))
-        
     return results
