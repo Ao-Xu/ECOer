@@ -395,7 +395,7 @@ for ax, (mk, mlabel) in zip(axes, metrics_comp):
     for b, v in zip(bars, vals):
         ax.text(b.get_x()+b.get_width()/2, b.get_height()+max(vals)*0.01,
                 f'{v:.3f}', ha='center', va='bottom', fontsize=6.5)
-fig.suptitle('Exp.4 — Energy Component Ablation (Adult, KNN $k$=5)',
+fig.suptitle('Exp.4 - Reconstruction-Regularization Component Ablation (Adult, KNN $k$=5)',
              fontsize=10, fontweight='bold', y=1.02)
 fig.tight_layout()
 save(fig, 'exp4_ablation_ecoe_components.png')

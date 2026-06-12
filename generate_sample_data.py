@@ -153,7 +153,7 @@ comp_abl = {
     'ECOer (full)': {'validity':0.88,'l1':1.62,'dp':0.855,'im':0.091,'sparsity':3.82},
     'w/o R_grad':   {'validity':0.83,'l1':1.89,'dp':0.792,'im':0.138,'sparsity':4.31},
     'w/o R_cons':   {'validity':0.77,'l1':1.74,'dp':0.735,'im':0.181,'sparsity':4.75},
-    'w/o energy':   {'validity':0.71,'l1':2.10,'dp':0.651,'im':0.261,'sparsity':5.38},
+    'w/o recon. reg.': {'validity':0.71,'l1':2.10,'dp':0.651,'im':0.261,'sparsity':5.38},
     'DPMDCE':       {'validity':0.85,'l1':2.20,'dp':0.722,'im':0.141,'sparsity':4.23},
 }
 with open(os.path.join(exp4_dir,'ablation_components.json'),'w') as f:

@@ -1,84 +1,61 @@
-"""
-run_all.py — One-shot script to run the full ECOer experiment pipeline.
+"""One-shot runner for the ECOer experiment pipeline."""
+from __future__ import annotations
 
-Usage:
-    python run_all.py [--skip-setup] [--only exp1] [--device cuda]
+import argparse
+import os
+import sys
+import time
 
-Steps:
-  0. Setup: preprocess all 6 datasets, train 18 classifiers
-  1. Exp 1: R2SNN approximation comparison
-  2. Exp 2: Proximity metrics (ℓ₁, ℓ₂)
-  3. Exp 3: Quality metrics (DP, IM, Sparsity)
-  4. Exp 4: Ablation study
-  5. Exp 5: Statistical significance tests
-"""
-import sys, os, argparse, time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import config
-from src.preprocessing import setup_all_datasets, load_processed
 from src.classifiers import setup_all_classifiers
+from src.preprocessing import load_processed, setup_all_datasets
+
+
+EXPERIMENTS = [
+    "exp1", "exp2", "exp3", "exp4", "exp5",
+    "exp6", "exp7", "exp8", "exp9", "exp10",
+]
 
 
 def parse_args():
-    p = argparse.ArgumentParser(description="Run ECOer experiments")
-    p.add_argument("--skip-setup", action="store_true",
-                   help="Skip dataset preprocessing and classifier training")
-    p.add_argument("--only", default=None,
-                   choices=["exp1", "exp2", "exp3", "exp4", "exp5"],
-                   help="Run only a specific experiment")
-    return p.parse_args()
+    parser = argparse.ArgumentParser(description="Run ECOer experiments")
+    parser.add_argument(
+        "--skip-setup",
+        action="store_true",
+        help="Skip dataset preprocessing and classifier training",
+    )
+    parser.add_argument("--only", choices=EXPERIMENTS, help="Run one experiment")
+    return parser.parse_args()
 
 
 def step0_setup():
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("STEP 0: Dataset preprocessing and classifier training")
-    print("="*60)
+    print("=" * 60)
     t0 = time.time()
     setup_all_datasets()
     data_map = {ds: load_processed(ds) for ds in config.DATASETS}
     setup_all_classifiers(data_map)
-    print(f"Setup done in {time.time()-t0:.1f}s")
+    print(f"Setup done in {time.time() - t0:.1f}s")
 
 
-def step1():
-    print("\n" + "="*60)
-    print("STEP 1: R2SNN Approximation (Exp 1)")
-    print("="*60)
-    import run_exp1_approx
-    run_exp1_approx.run()
+def _run_named(module_name: str, display: str, run_attr: str = "run"):
+    print("\n" + "=" * 60)
+    print(display)
+    print("=" * 60)
+    module = __import__(module_name)
+    if run_attr == "run":
+        module.run()
+        return
 
-
-def step2():
-    print("\n" + "="*60)
-    print("STEP 2: Proximity Metrics (Exp 2)")
-    print("="*60)
-    import run_exp2_proximity
-    run_exp2_proximity.run()
-
-
-def step3():
-    print("\n" + "="*60)
-    print("STEP 3: Quality Metrics (Exp 3)")
-    print("="*60)
-    import run_exp3_quality
-    run_exp3_quality.run()
-
-
-def step4():
-    print("\n" + "="*60)
-    print("STEP 4: Ablation Study (Exp 4)")
-    print("="*60)
-    import run_exp4_ablation
-    run_exp4_ablation.run()
-
-
-def step5():
-    print("\n" + "="*60)
-    print("STEP 5: Statistical Tests (Exp 5)")
-    print("="*60)
-    import run_exp5_stats
-    run_exp5_stats.run()
+    old_argv = sys.argv[:]
+    sys.argv = [module_name + ".py"]
+    try:
+        getattr(module, run_attr)()
+    finally:
+        sys.argv = old_argv
 
 
 def main():
@@ -89,25 +66,30 @@ def main():
         step0_setup()
 
     runners = {
-        "exp1": step1,
-        "exp2": step2,
-        "exp3": step3,
-        "exp4": step4,
-        "exp5": step5,
+        "exp1": lambda: _run_named("run_exp1_approx", "STEP 1: R2SNN Approximation"),
+        "exp2": lambda: _run_named("run_exp2_proximity", "STEP 2: Proximity / Validity"),
+        "exp3": lambda: _run_named("run_exp3_quality", "STEP 3: DP / IM / Sparsity"),
+        "exp4": lambda: _run_named("run_exp4_ablation", "STEP 4: Ablation Study"),
+        "exp5": lambda: _run_named("run_exp5_stats", "STEP 5: Statistical Tests"),
+        "exp6": lambda: _run_named("run_exp6_runtime", "STEP 6: Runtime / Hidden-Width / Memory", "main"),
+        "exp7": lambda: _run_named("run_exp7_stability", "STEP 7: Ridge Reconstruction Stability", "main"),
+        "exp8": lambda: _run_named("run_exp8_distortion", "STEP 8: Metric-Distortion Diagnostic", "main"),
+        "exp9": lambda: _run_named("run_exp9_sampling_ablation", "STEP 9: Sampling / Training Ablation", "main"),
+        "exp10": lambda: _run_named("run_exp10_rf_specialized", "STEP 10: RF-Specific Sanity Baseline", "main"),
     }
 
     if args.only:
         runners[args.only]()
     else:
-        for fn in runners.values():
-            fn()
+        for exp_name in EXPERIMENTS:
+            runners[exp_name]()
 
     total = time.time() - total_t0
-    print(f"\n{'='*60}")
-    print(f"ALL EXPERIMENTS COMPLETED in {total/3600:.2f}h ({total:.0f}s)")
+    print("\n" + "=" * 60)
+    print(f"EXPERIMENTS COMPLETED in {total / 3600:.2f}h ({total:.0f}s)")
     print(f"Figures saved to: {config.FIGURES_DIR}")
-    print(f"LaTeX figures:    {config.LATEX_DIR}")
-    print(f"{'='*60}")
+    print(f"Results saved to: {config.RESULTS_DIR}")
+    print("=" * 60)
 
 
 if __name__ == "__main__":

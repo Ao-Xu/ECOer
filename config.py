@@ -48,12 +48,17 @@ R2SNN_ZETA2     = 0.1       # consistency-term weight
 R2SNN_GAMMA_CLIP = 1.0      # gradient magnitude threshold for R_grad
 R2SNN_TAU_CLIP  = 1.0       # gradient clipping for AdamW
 R2SNN_DELTA_C   = 10.0      # sharpness for R_cons
+RECON_RIDGE     = 1e-4      # eta for ridge-regularized reconstruction map
 
 # ECOer counterfactual optimiser
-LAMBDA1    = 0.50
-LAMBDA2    = 0.40
-BETA       = 0.60
-CF_LR      = 0.01
+# lambda_pre is used before the iterate reaches the target side of the
+# surrogate boundary; lambda_post is used after target-side crossing.
+LAMBDA_PRE  = 0.50
+LAMBDA_POST = 0.40
+LAMBDA1     = LAMBDA_POST  # backward-compatible alias
+LAMBDA2     = LAMBDA_PRE   # backward-compatible alias
+BETA        = 0.60
+CF_LR       = 0.01
 CF_MAX_STEPS = 200
 
 # ── Experiment settings ────────────────────────────────────────────────────────
