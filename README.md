@@ -120,18 +120,6 @@ python run_all.py --only exp10
 
 Results are cached under `results/`. Cached models are stored under `models/`.
 
-## Revision Experiments
-
-The reviewer-response revision added the following experiments:
-
-- Runtime and hidden-width sensitivity (`run_exp6_runtime.py`).
-- Ridge reconstruction stability (`run_exp7_stability.py`).
-- Direct metric-distortion diagnostic (`run_exp8_distortion.py`).
-- Sampling/training-pipeline ablation (`run_exp9_sampling_ablation.py`).
-- RF-specific sanity baseline (`run_exp10_rf_specialized.py`).
-
-The corresponding manuscript figures are generated in `submission_extracted/`
-for inclusion in the revised LaTeX source.
 
 ## Citation
 
